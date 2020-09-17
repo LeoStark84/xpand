@@ -4,8 +4,7 @@ xfarm = {}
 crop = {}
 ditchnodes = { "s", "c", "t", "x" }
 point_at = { b = 0, r = 1, f = 2, l = 3 }
-local newgrassdrop = {}
-newgrassdrop.items = {}
+grassdrop = { items = {}, maxitems = 1 } 
 
 
 
@@ -297,368 +296,494 @@ end
 
 
 
-
-
-
-
-
-
 xfarm.get_phase_timer = function(fertility, nominal_time)
 	return ((nominal_time * 2) / fertility) * ((((math.random() * 2) - 1) / 10) + 1)
 end
 
-xfarm.get_drop_count = function(fertility, nominal_drop_count)
-	return nominal_drop_count + ( fertility - 2)
-end
-
-xfarm.register_all_plants = function(parentmod, plants)
-	for k, v in pairs(plants) do
-		xfarm.register_xplant(parentmod, v)
+xfarm.register_all_plants = function(parentmod, plantlist)
+	for i = 1, #plantlist do
+		xfarm.register_plant(parentmod, plantlist[i])
 	end
-end
-
-
-
-
--- the big bad-ass function that does all the magic
-xfarm.register_xplant = function(parentmod, plant)
-	-- big fat initialization of vars
-	local abortdef = false
-	local seed_name = ""
-	local seed_node_name = ""
-	local seed_count = 0
-	local primary_drop = ""
-	local primary_drop_count = 0
-	local primary_drop_node_name = ""
-	local top_nodes = {}
-	-- getting type-specific parameters
-	if (type(plant.name) == "string") and (plant.name ~= "") then
-		if plant.type == "cereal" then
-			if type(plant.cereal) == "table" then
-				if plant.cereal.grain_name and (plant.cereal.grain_name ~= "") and (type(plant.cereal.grain_name) == "string") then
-					seed_name = plant.name .. "_" .. plant.cereal.grain_name
-				else
-					seed_name = plant_name .. "_grain"
-				end
-				if plant.cereal.pod_name and (plant.cereal.pod_name ~= "") and (type(plant.cereal.pod_name) == "string") then
-					primary_drop = plant.name .. "_" .. plant.cereal.pod_name
-				else
-					primary_drop = plant.name .. "_spike"
-				end
-				if plant.cereal.pod_count and (plant.cereal.pod_count > 0) then
-					primary_drop_count = plant.cereal.pod_count
-				else
-					primary_drop_count = 1
-				end
-				if plant.cereal.grains_per_pod and plant.cereal.grains_per_pod > 2 then
-					seed_count = plant.cereal.grains_per_pod
-				else
-					seed_count = 2
-				end
-				seed_node_name = parentmod .. ":" .. seed_name
-				primary_drop_node_name = parentmod .. ":" .. primary_drop
-				seed_tile_name = parentmod .. "_" .. seed_name .. ".png"
-			else
-				minetest.log("Something went awfully wrong in xfarm")
-				minetest.log(plant.name .. "'s type is \"cereal\", but " .. plant.name ..".cereal is undefined")
-				minetest.log(plant.name .. " registration aborted")
-			end
-		elseif plant.type == "fruit" then
-			if type(plant.fruit) == "table" then
-				if plant.fruit.name and (plant.fruit.fruit_name ~= "") and (type(plant.fruit.fruit_name) == "string") then
-					primary_drop = plant.name .. "_" .. plant.fruit_name
-				else
-					primary_drop = plant.name
-				end
-				if plant.fruit.fruit_count and (plant.fruit.fruit_count > 1) then
-					primary_drop_count = plant.fruit.fruit_count
-				else
-					primary_drop_count = 2
-				end
-				if plant.fruit.seed_count and (plant.fruit.seed_count > 0) then
-					seed_count = plant.fruit.seed_count
-				else
-					seed_count = 1
-				end
-				if plant.fruit.seed_name and (plant.fruit.seed_name ~= "") and (type(plant.fruit.seed_name) == "string") then
-					seed_name = plant.name .. "_" .. plant.fruit.seed_name
-				else
-					seed_name = plant.name .. "_seeds"
-				end
-				seed_node_name = parentmod .. ":" .. seed_name
-				primary_drop_node_name = parentmod .. ":" .. primary_drop
-				seed_tile_name = parentmod .. "_" .. seed_name .. ".png"
-			else
-				minetest.log("Something went awfully wrong in xfarm")
-				minetest.log(plant.name .. "'s type is \"fruit\", but " .. plant.name ..".fruit is undefined")
-				minetest.log(plant.name .. " registration aborted")
-			end
-		elseif plant.type == "tuber" then
-			if type(plant.tuber) == "table" then
-				if plant.tuber.tubers_name and (plant.tuber.tubers_name ~= "") and (type(plant.tuber.tubers_name) == "string") then
-					primary_drop = plant.name .. "_" .. plant..tuber.tubers_name
-				else
-					primary_drop= plant.name
-				end
-				if plant.tuber.tubers_count and plant.tuber.tubers_count > 1 then
-					primary_drop_count = plant.tuber.tubers_count
-				else
-					primary_drop_count = 2
-				end
-				seed_name = primary_drop
-				seed_node_name = parentmod .. ":" .. seed_name
-				primary_drop_node_name = parentmod .. ":" .. primary_drop
-				seed_tile_name = parentmod .. "_" .. plant.name .. "_0.png"
-			else
-				minetest.log("Something went awfully wrong in xfarm")
-				minetest.log(plant.name .. "'s type is \"ruber\", but " .. plant.name ..".tuber is undefined")
-				minetest.log(plant.name .. " registration aborted")
-			end
-		elseif plant.type == "leaf" then
-			if type(plant.leaf) == "table" then
-				if plant.leaf.leaves_name and (plant.leaf.leaves_name ~= "") and (type(plant.leaf.leaves_name) == "string") then
-					primary_drop = plant.name .. "_" .. plant.leaf.leaves_name
-				else
-					primary_drop = plant.name .. "_leaves"
-				end
-				if plant.leaf.seed_name and (plant.leaf.seed_name ~= "") and (type(plant.leaf.seed_name) == "string") then
-					seed_name = plant.name .. "_" .. plant.leaf.seed_name
-				else
-					seed_name = plant.name .. "_seeds"
-				end
-				if plant.leaf.leaves_count and (plant.leaf.leaves_count > 0) then
-					primary_drop_count = plant.leaf.leaves_count
-				else
-					primary_drop_count = 1
-				end
-				if plant.leaf.seed_count and (plant.leaf.seed_count > 1) then
-					seed_count = plant.leaf.seed_count
-				else
-					seed_count = 2
-				end
-				seed_node_name = parentmod .. ":" .. seed_name
-				primary_drop_node_name = parentmod .. ":" .. primary_drop
-				seed_tile_name = parentmod .. "_" .. seed_name .. ".png"
-			else
-				minetest.log("Something went awfully wrong in xfarm")
-				minetest.log(plant.name .. "'s type is \"leaf\", but " .. plant.name ..".leaf is undefined")
-				minetest.log(plant.name .. " registration aborted")
-			end
-		else
-			minetest.log("Somerhing went awfully wrong in xfarm")
-			minetest.log("while trying to register " .. plant.name)
-			minetest.log("Invalid type parameter " .. plant.type .. " plant type not defined")
-			abortdef = true
-		end
-	else
-		abortdef = true
-		abortdef = trueminetest.log("Something went awfully wrong in xfarm")
-		if type(plant.type) == "nil" then
-			minetest.log("Plant type undefined")
-		else
-			minetest.log("Plant name is" .. type(plant.type))
-		end
-		minetest.log("Plant name must be a (non-empty) string")
-	end
-	if not abortdef then
-		-- register seed
-		local gr = { xfarm = 1, snappy = 3, flammable = 1 }
-		gr[plant.type] = 1
-		minetest.register_node(seed_node_name, {
-			description = xhelper.descriptify(seed_name),
-			tiles = { seed_tile_name },
-			inventory_image = parentmod .. "_" .. seed_name .. ".png",
-			groups = gr,
-			walkable = false,
-			buildable_to = true,
-			drawtype = "signlike",
-			paramtype = "light",
-			paramtype2 = "wallmounted",
-			sounds = default.node_sound_leaves_defaults(),
-			sunlight_propagates = true,
-			selection_box = {
-				type = "fixed",
-				fixed = {-0.5, -0.5, -0.5, 0.5, -5/16, 0.5},
-			},
-			on_construct = function(pos)
-				local fertility = minetest.get_node_group(minetest.get_node({x = pos.x, y = pos.y - 1, z = pos.z }).name, "soil")
-				if (fertility > 0) and (minetest.get_node_light(pos, 0.5) > 9) then
-					minetest.get_node_timer(pos):start(xfarm.get_phase_timer(fertility, plant.seconds_per_phase))
-				else
-					minetest.get_node_timer(pos):start(300)
-				end
-			end,
-			on_timer = function(pos,time)
-				local fertility = minetest.get_node_group(minetest.get_node({x = pos.x, y = pos.y - 1, z = pos.z }).name, "soil")
-				if (fertility > 0) and (minetest.get_node_light(pos, 0.5) > 9) then
-					minetest.set_node(pos, { name = parentmod .. ":" .. plant.name .. "_1" })
-				else
-					minetest.remove_node(pos)
-				end
-				return false
-			end
+	table.insert(grassdrop.items, { items = "default:grass_1"})
+	for i = 1, 5 do
+		minetest.override_item( "default:grass_" .. i, {
+			drop = grassdrop
 		})
-		-- initialize for phases registration
-		local phases
-		if (plant.phases <= 0) or (plant.phases == nil) or (plant.phases == false) or (plant.phases == "") then
-			phases = 1
+	end
+end
+
+
+xfarm.register_plant = function(parentmod, plant)
+	-- first var init
+	local abortdef = false
+	-- mandatory parameters checkup
+	if (type(plant.name) ~= "string") or (plant.name == "") then
+		abortdef = 1
+		minetest.log("Something went wrong in xfarm")
+		minetest.log("plant name undefined")
+	end
+	-- if no fatal error
+	if not abortdef then
+	-- var declaring
+		local phases = 0 -- plants phases
+		local basetime = 0 -- nominal grow time
+		local tall = 0 -- phase when plant becomes tall
+		local scale = 0
+		local wild = ""
+		local wild_tile = ""
+		local wild_node
+		local get_from = "" -- wild seed from grass or wil wild plant
+		local wild_biomes = {} -- biomes where sild plant appears
+		local wild_drop = 0 -- seeds wild plant drops
+		local seed_dropper = ""
+		local primary = ""
+		local primary_pre = ""
+		local primary_base = ""
+		local primary_suf = ""
+		local primary_count = 0
+		local primary_node = ""
+		local primary_tile = ""
+		local preseed = ""
+		local preseed_node = ""
+		local preseed_tile = ""
+		local seed = ""
+		local seed_pre = ""
+		local seed_base = ""
+		local seed_suf = ""
+		local seed_count = 0
+		local seed_node = ""
+		local seed_tile = ""
+		local seed_inv = ""
+		local seed_origin
+		local plantgroups = { xfarm = 1, plant = 1 }
+		local plantdropminus = { items = {}, maxitems = 0 }
+		local plantdropbase = { items = {}, max_items = 0 }
+		local plantdropplus = { items = {}, max_items = 0 }
+		local top_nodes = {}
+		
+		
+		-- put everything into vars, use default value wjere needed
+		phases = xhelper.def_or_def(plant.phases, "number", false, 1)
+		basetime = xhelper.def_or_def(plant.seconds_per_phase, "number", false, 30)
+		tall = xhelper.def_or_def(plant.tall_phase, "number", false, false)
+		if type(plant.first_seed) == "table" then
+			minetest.log(plant.name)
+			if type(plant.first_seed.wild_biomes) == "table" then
+				wild_biomes = xhelper.def_or_def(plant.first_seed.wild_biomes, "table", false, { "grassland"})
+			elseif type(plant.first_seed.wild_biomes) == "string" then
+				wild_biomes = xhelper.def_or_def(plant.first_seed.wild_biomes, "string", false, { "grassland" })
+			else
+				wild_biomes = { "grassland" }
+			end
+			wild_drop = xhelper.def_or_def(plant.first_seed.drop, "number", false, 1)
+			get_from = "wild"
 		else
-			phases = plant.phases
+			get_from = "grass"
 		end
-		-- and iterate phase registration
-		local scale = 1
-		if phases > 1 then
-			for i = 1, phases - 1 do -- except for last phase
-				if plant.tall_phase then
-					if (plant.tall_phase > 0) and (plant.tall_phase <= i) then
-						scale = 2
-					end
+		if type(plant.primary_drop_name) == "table" then
+			primary_pre = xhelper.def_or_def(plant.primary_drop_name.pre, "string", false, "")
+			if not plant.primary_drop_namea.ovr then
+				primary_base = plant.name
+			else
+				primary_base = xhelper.def_or_def(plant.primary_drop_name.ovr, "string", false, "")
+			end
+			primary.suf = xhelper.def_or_def(plant.primary_drop_name.suf, "string", false, "")
+			if (primary_pre == "") and (primary_base == "") and (primary_suf == "") then
+				primary = plant.name
+			else
+				primary = primary.pre .. primary.base .. primary.suf
+			end
+		else
+			primary = xhelper.def_or_def(plant.primary_drop_name, "string", false, plant.name)
+		end
+		primary_node = parentmod .. ":" .. primary
+		primary_tile = parentmod .. "_" .. primary .. ".png"
+		primary_count = xhelper.def_or_def(plant.primary_drop_count, "number", false, 1)
+		seed_dropper = xhelper.def_or_def(plant.seed_origin, "string", { "from_primary", "from_plant", "is_primary" }, "from_plant")
+		if seed_dropper == "is_primary" then -- seed, seednode, seedtile and seedcount here
+			seed = primary
+			seed_count = false
+		else
+			if type(plant.seed_name) == "table" then
+				seed_pre = xhelper.def_or_def(plant.seed_name.pre, "string", true, "")
+				if plant.seed_name.ovr ~= false then
+					seed_base = xhelper.def_or_def(plant.seed_name.ovr, "string", true, "")
+				else
+					seed_base = plant.name
 				end
-				minetest.register_node(parentmod .. ":"  .. plant.name .. "_" .. i, {
-					description = xhelper.descriptify(plant.name) .. i,
-					tiles = { parentmod .. "_" .. plant.name .. "_" .. i .. ".png" },
+				seed_suf = xhelper.def_or_def(plant.seed_name.suf, "string", true, "")
+				if (seed_pre == "") and (seed_base == "") and (seed_suf == "") then
+					seed = plant.name .. "_seed"
+				else
+					seed = seed_pre .. seed_base .. seed_suf
+				end
+			else
+				seed = plant.name .. "_" .. xhelper.def_or_def(plant.seed_name, "string", false, "seeds")
+			end
+		end
+			if plant.ivilike then
+				preseed = seed
+				seed = seed .. "_with_support_sticks"
+				preseed_node = parentmod .. ":" .. preseed
+				preseed_tile = parentmod .. "_" .. preseed .. ".png"
+			end
+			seed_count = xhelper.def_or_def(plant.seed_count, "number", false, 2)
+			seed_node = parentmod .. ":" .. seed
+			seed_tile = parentmod .. "_" .. seed .. ".png"
+			seed_inv = seed_tile
+			-- register seed and phases
+			if phases >= 2 then -- grow to single version phase 1
+				minetest.register_node(seed_node, {
+					description = xhelper.descriptify(seed),
+					tiles = { seed_tile },
+					inventory_image = seed_inv,
+					wield_image = seed_tile,
+					groups = plantgroups,
+					walkable = false,
+					buildable_to = true,
+					drawtype = "signlike",
+					paramtype = "light",
+					paramtype2 = "wallmounted",
+					sounds = default.node_sound_leaves_defaults(),
+					sunlight_propagates = true,
+					selection_box = {
+						type = "fixed",
+						fixed = {-0.5, -0.5, -0.5, 0.5, -5/16, 0.5},
+					},
+					on_construct = function(pos)
+						local fertility = minetest.get_node_group(minetest.get_node({x = pos.x, y = pos.y - 1, z = pos.z }).name, "soil")
+						if (fertility > 0) and (minetest.get_node_light(pos, 0.5) > 9) then
+							minetest.get_node_timer(pos):start(xfarm.get_phase_timer(fertility, basetime))
+						else
+							minetest.get_node_timer(pos):start(300)
+						end
+					end,
+					on_timer = function(pos,time)
+						local fertility = minetest.get_node_group(minetest.get_node({x = pos.x, y = pos.y - 1, z = pos.z }).name, "soil")
+						if (fertility > 0) and (minetest.get_node_light(pos, 0.5) > 9) then
+							minetest.set_node(pos, { name = parentmod .. ":" .. plant.name .. "_1" })
+						else
+							minetest.remove_node(pos)
+						end
+						return false
+					end
+				})
+				-- -- all phases but last two
+				if phases > 2 then -- only when more than 2 phases
+					for curphase = 1, phases - 2 do -- iterate registration for all phases but last two
+						if tall and (tall <= curphase) then
+							scale = 2
+						else
+							scale = 1
+						end
+						minetest.register_node(parentmod .. ":"  .. plant.name .. "_" .. curphase, {
+							description = xhelper.descriptify(plant.name) .. " " .. curphase,
+							tiles = { parentmod .. "_" .. plant.name .. "_" .. curphase .. ".png" },
+							visual_scale = scale,
+							inventory_image = parentmod .. "_" .. plant.name .. "_" .. curphase .. ".png",
+							groups = plantgroups,
+							walkable = false,
+							buildable_to = true,
+							paramtype = "light",
+							drawtype = "plantlike",
+							sunlight_propagates = true,
+							drop = seed_node,
+							on_construct = function(pos)
+								local fertility = minetest.get_node_group(minetest.get_node({x = pos.x, y = pos.y - 1, z = pos.z }).name, "soil")
+								if (fertility > 0) and (minetest.get_node_light(pos, 0.5) > 9) then
+									minetest.get_node_timer(pos):start(xfarm.get_phase_timer(fertility, basetime))
+								else
+									minetest.get_node_timer(pos):start(300)
+								end
+								return nil
+							end,
+							on_timer = function(pos,time)
+								local fertility = minetest.get_node_group(minetest.get_node({x = pos.x, y = pos.y - 1, z = pos.z }).name, "soil")
+								if (fertility > 0) and (minetest.get_node_light(pos, 0.5) > 9) then
+									minetest.set_node(pos, { name = parentmod .. ":" .. plant.name .. "_" .. curphase + 1})
+								else
+									minetest.remove_node(pos)
+								end
+							end
+						})
+					end -- next curphase
+				end
+				-- register pre-last phase
+				if tall and (tall <= curphase) then
+					scale = 2
+				else
+					scale = 1
+				end
+				minetest.register_node(parentmod .. ":"  .. plant.name .. "_" .. phases - 1, {
+					description = xhelper.descriptify(plant.name) .. " " .. phases - 1,
+					tiles = { parentmod .. "_" .. plant.name .. "_" .. phases - 1 .. ".png" },
 					visual_scale = scale,
-					inventory_image = parentmod .. "_" .. plant.name .. "_" .. i .. ".png",
-					groups = gr,
+					inventory_image = parentmod .. "_" .. plant.name .. "_" .. phases - 1 .. ".png",
+					groups = plantgroups,
 					walkable = false,
 					buildable_to = true,
 					paramtype = "light",
 					drawtype = "plantlike",
 					sunlight_propagates = true,
-					drop = seed_node_name,
+					drop = seed_node,
 					on_construct = function(pos)
 						local fertility = minetest.get_node_group(minetest.get_node({x = pos.x, y = pos.y - 1, z = pos.z }).name, "soil")
 						if (fertility > 0) and (minetest.get_node_light(pos, 0.5) > 9) then
-							minetest.get_node_timer(pos):start(xfarm.get_phase_timer(fertility, plant.seconds_per_phase))
+							minetest.get_node_timer(pos):start(xfarm.get_phase_timer(fertility, basetime))
 						else
 							minetest.get_node_timer(pos):start(300)
 						end
 						return nil
 					end,
 					on_timer = function(pos,time)
-					local fertility = minetest.get_node_group(minetest.get_node({x = pos.x, y = pos.y - 1, z = pos.z }).name, "soil")
+						local fertility = minetest.get_node_group(minetest.get_node({x = pos.x, y = pos.y - 1, z = pos.z }).name, "soil")
 						if (fertility > 0) and (minetest.get_node_light(pos, 0.5) > 9) then
-							minetest.set_node(pos, { name = parentmod .. ":" .. plant.name .. "_" .. i + 1})
+							if fertility == 1 then
+								minetest.set_node(pos, { name = parentmod .. ":" .. plant.name .. phases - 1 .. "_-1" })
+							elseif fertility == 2 then
+								minetest.set_node(pos, { name = parentmod .. ":" .. plant.name .. phases - 1 })
+							else
+								minetest.set_node(pos, { name = parentmod .. ":" .. plant.name .. phases - 1 .. "+1" })
+							end
 						else
 							minetest.remove_node(pos)
 						end
 					end
 				})
-			end
-		end
-		-- initialize for last phase
-		if plant.tall_phase then
-			if (plant.tall_phase > 0) and (plant.tall_phase <= phases) then
-				scale = 2
-			end
-		end
-		local plantdrop = {}
-		plantdrop.items = {}
-		-- put drop on a table
-		local primary_drop_node = parentmod .. ":" .. primary_drop
-		table.insert(plantdrop.items, { items = { primary_drop_node .. " " .. primary_drop_count } } )
-		if plant.type == "leaf" then
-			table.insert(plantdrop.items, { items = { seed_node_name .. " " .. seed_count } } )
-		end
-		if plant.drop_else and (plant.drop_else ~= "") and (type(plant.drop_else) == "string") then
-			local drop_else_node_name = parentmod .. ":" .. plant.drop_else
-			local drop_else_flag = true
-			if plant.drop_else_count and (plant.drop_else_count > 0) then
-				table.insert(plantdrop.items, { items = { drop_else_node_name .. " " .. plant.drop_else_count } } )
-			else
-				table.insert(plantdrop.items, { items = { drop_else_node_name } } )
-			end
-		end
-		plantdrop.max_items = #plantdrop.items
-		-- register last phase
-		minetest.register_node(parentmod .. ":"  .. plant.name .. "_" .. plant.phases, {
-			description = xhelper.descriptify(plant.name) .. " phase " .. plant.phases,
-			tiles = { parentmod .. "_" .. plant.name .. "_" .. plant.phases .. ".png" },
-			visual_scale = scale,
-			inventory_image = parentmod .. "_" .. plant.name .. "_" .. plant.phases .. ".png",
-			groups = gr,
-			walkable = false,
-			buildable_to = true,
-			paramtype = "light" ,
-			drawtype = "plantlike",
-			sounds = default.node_sound_leaves_defaults(),
-			sunlight_propagates = true,
-			drop = plantdrop
-		})
-		-- whew... primary drop registration
-		if plant.type ~= "tuber" then -- tybers primary drop was already registered as node, along with seeds
-			minetest.register_craftitem( primary_drop_node_name, {
-				description = xhelper.descriptify(primary_drop),
-				inventory_image = parentmod .. "_" .. primary_drop .. ".png",
-			})
-			--register seed craft
-			if plant.type ~= "leaf" then -- but not for leaf type because they are gotten from the plant itself
-				minetest.register_craft({
-					type = "shapeless",
-					output = seed_node_name,
-					recipe = { primary_drop_node_name }
+			else -- if only 1 phase 
+				minetest.register_node(seed_node { -- grow to -1, 0 or +1 versions of phase 1 depending on soil quality straight from the seed
+					description = xhelper.descriptify(seed),
+					tiles = { seed_tile },
+					inventory_image = seed_inv,
+					wield_image = seed_tile,
+					groups = plantgroups,
+					walkable = false,
+					buildable_to = true,
+					drawtype = "signlike",
+					paramtype2 = "wallmounted",
+					paramtype = "light",
+					sounds = default.node_sound_leaves_defaults(),
+					sunlight_propagates = true,
+					selection_box = {
+						type = "fixed",
+						fixed = {-0.5, -0.5, -0.5, 0.5, -5/16, 0.5},
+					},
+					on_construct = function(pos)
+						local fertility = minetest.get_node_group(minetest.get_node({x = pos.x, y = pos.y - 1, z = pos.z }).name, "soil")
+						if (fertility > 0) and (minetest.get_node_light(pos, 0.5) > 9) then
+							minetest.get_node_timer(pos):start(xfarm.get_phase_timer(fertility, basetime))
+						else
+							minetest.get_node_timer(pos):start(300)
+						end
+					end,
+					on_timer = function(pos,time)
+						local fertility = minetest.get_node_group(minetest.get_node({x = pos.x, y = pos.y - 1, z = pos.z }).name, "soil")
+						if (fertility > 0) and (minetest.get_node_light(pos, 0.5) > 9) then
+							if fertility == 1 then
+								minetest.set_node(pos, { name = parentmod .. ":" .. plant.name .. "_1_-1" })
+							elseif fertility == 2 then
+								minetest.set_node(pos, { name = parentmod .. ":" .. plant.name .. "_1" })
+							else
+								minetest.set_node(pos, { name = parentmod .. ":" .. plant.name .. "_1_+1" })
+							end
+						else
+							minetest.remove_node(pos)
+						end
+						return false
+					end
 				})
 			end
-		end
-		-- register wild plants
-		if plant.first_seed == "wild" then
-			local wild_name = "wild_" .. plant.name
-			minetest.register_node( parentmod .. ":" .. wild_name, {
-				description = xhelper.descriptify(wild_name),
-				tiles = { parentmod .. "_" .. wild_name .. ".png" },
+			-- create primary and seed  (if needed) drops for -1, 0 and +1 versions of last phase
+			if primary_count == 1 then
+				if seed_origin == "from_plant" then
+					table.insert(plantdropminus.items, { items = seed_node .. " 1", rarity = 2 })
+				end
+				table.insert(plantdropminus.items, { items = primary_node .. " 1", rarity = 2 })
+			else
+				if seed_origin == "from_plant" then
+					table.insert(plantdropminus.items, { items = seed_node .. seed_count - 1})
+				end
+				table.insert(plantdropminus.items, { items = primary_node .. " " .. primary_count - 1 })
+			end
+			if seed_origin == "from_plant" then
+				table.unsert(plantdropbase.items, { items = seed_node .. " " .. seed_count })
+				table.unsert(plantdropbase.items, { items = seed_node .. " " .. seed_count + 1 })
+			end
+			table.insert(plantdropbase.items, { items = primary_node .. " " .. primary_count })
+			table.insert(plantdropplus.items, { items = primary_node .. " " .. primary_count + 1 })
+			 -- add drop_else to table if needed and oh boy it'going to be long
+			if type(plant.drop_else) == "table" then --#1
+				if type(plant.drop_else[1]) == "table" then --#2
+					for i = 1, #plant.drop_else do --#3
+						if plant.drop_else[i]["count"] == 1 then --#4
+							table.insert(plantdropminus, { name = plant.drop_else[i]["name"], rarity = 2 })
+						else -- #4
+							table.insert(plantdropminus, {name = plantdrop_else[i]["name"] .. " " .. plant.drop_else[i]["count"] - 1 })
+						end -- #4
+						table.insert(plantdropbase.items, { name = plant.drop_else[i]["name"] .. " " .. plant.drop_else[i]["count"] })
+						table.insert(plantdropplus.items, { name = plant.drop_else[i]["name"] .. " " .. plant.drop_else[i]["count"] + 1 })
+						if plant.drop_else[i]["register"] then -- #4
+							minetest.register_craftitem( parentmod .. ":" .. plant.drop_else[i]["name"], {
+								description = xhelper.descriptify(plant.drop_else[i]["name"]),
+								tiles = { parentmod .. "_" .. plant.drop_else[i]["name"] .. ".png" },
+								groups = { xfarm = 1, byproduct = 1 }
+							})
+						end -- endif #4
+					end -- #3
+				else -- #2
+					if plant.drop_else.count == 1 then
+						table.insert(plantdropminus, { name = plant.drop_else.name, rarity = 2 })
+					else
+						rable.insert(plantdropminus, { name = plant.drop_else.name .. " " .. plant.drop_else.count - 1 })
+					end
+					table.insert(plantdropbase, { name = plant.drop_else.name .. " " .. plant.drop_else.count })
+					table.insert(plantdropplus, { name = plant.drop_else.name .. " " .. plant.drop_else.count + 1 })
+					if plant.drop_else.register then
+						minetest.register_craftitem( parentmod .. ":" .. plant.drop_else[i]["name"], {
+							description = xhelper.descriptify(plant.drop_else[i]["name"]),
+							tiles = { parentmod .. "_" .. plant.drop_else[i]["name"] .. ".png" },
+							groups = { xfarm = 1, byproduct = 1 }
+						})
+					end -- endif
+				end
+			else
+				if plant.drop_else then
+					minetest.log("drop_else for " .. plant.name .. " is not a table")
+					minetest.log("assuming either nil or false as scalar values are not allowed")
+				end
+			end -- ok it wasn't that long, moving on to register last phase three flavours
+			
+			-- register -1 version
+			minetest.register_node(parentmod .. ":"  .. "infra_" .. plant.name .. "_" .. phases, {
+				description = xhelper.descriptify(plant.name) .. phases,
+				tiles = { parentmod .. "_" .. "infra_" .. plant.name .. "_" .. phases .. ".png" },
+				visual_scale = scale,
+				groups = plantgroups,
+				walkable = false,
+				buildable_to = true,
 				paramtype = "light",
 				drawtype = "plantlike",
 				sunlight_propagates = true,
+				drop = plantdropminus
+			})
+			
+			-- register nominal version
+			minetest.register_node(parentmod .. ":"  .. plant.name .. "_" .. phases, {
+				description = xhelper.descriptify(plant.name) .. phases,
+				tiles = { parentmod .. "_" .. plant.name .. "_" .. phases .. ".png" },
+				visual_scale = scale,
+				groups = plantgroups,
 				walkable = false,
 				buildable_to = true,
-				drop = seed_node_name
+				paramtype = "light",
+				drawtype = "plantlike",
+				sunlight_propagates = true,
+				drop = plantdropbase,
+				sounds = default.node_sound_leaves_defaults()
 			})
-			-- get the top node of every registered biome
-			if not top_nodes then
-				for k, v in pairs(minetest.registered_biomes) do
-					top_nodes[k] = v.node_top
+					
+					-- register  +1 version
+			minetest.register_node(parentmod .. ":"  .. "supra_" .. plant.name .. "_" .. phases, {
+				description = xhelper.descriptify(plant.name) .. phases,
+				tiles = { parentmod .. "_" .. "supra_" .. plant.name .. "_" .. phases .. ".png" },
+				visual_scale = scale,
+				groups = plantgroups,
+				walkable = false,
+				buildable_to = true,
+				paramtype = "light",
+				drawtype = "plantlike",
+				sunlight_propagates = true,
+				drop = plantdropplus
+			})
+			
+			-- register primary drop item
+			if seed_origin ~= "is_primary" then
+				minetest.register_craftitem( primary_node, {
+					description = xhelper.descriptify(primary),
+					tiles = { primary_tile }
+				})
+				if seed_origin == "from_primary" then
+					if plant.ivylike then
+						minetest.register_craft({
+							type = "shapeless",
+							output = preseed_seed_node,
+							recipe = { primary_node }
+						})
+						minetest.registerr_craft({
+							type = "shapeless",
+							output = seed_node,
+							recipe = { preseed_node, "xfarm:support_sricks" }
+						})
+						minetest.register_craftitem(preseed_node, {
+							description = descriptify(plant.name, preseed),
+							inventory_image = preseed_tile,
+							groups = plantgroups
+						})
+					else
+						minetest.register_craft({
+							type = "shapeless",
+							output = seed_node .. " " .. seed_count,
+							recipe = { primary_node }
+						})
+					end
 				end
 			end
-			-- register wild for every biome
-			minetest.register_decoration({
-				name = parentmod .. ":" .. wild_name,
+			-- either register wild version of the plant or add seed drop to grass nodes
+			if get_from == "wild" then
+				local f = false 
+				for k, v in pairs(wild_biomes) do
+					for l, m in pairs(minetest.registered_biomes) do
+						if k == m.name then
+							table.insert(top_nodes, v.top_node)
+							break
+						end
+					end
+				end
+				wild = "wild_" .. plant.name
+				wild_tile = parentmod .. "_" .. wild .. ".png"
+				wild_node = parentmod .. ":" .. wild
+				minetest.register_node(wild_node, {
+					description = xhelper.descriptify(wild),
+					tiles = { wild_tile },
+					walkable = false,
+					buildable_to = true,
+					paramtype = "light",
+					sounds = default.node_sound_leaves_defaults(),
+					drawtype = "plantlike",
+					sunlight_propagates = true,
+					drop = plantdropplus
+				})
+					
+				minetest.log("wild version for " .. plant.name .. " is " .. wild)
+				-- register the actual decoration
+				minetest.register_decoration({
+				name = wild_node,
 				deco_type = "simple",
 				place_on = top_nodes,
 				sidelen = 16,
 				noise_params = {
-					offset = -0.1,
-					scale = 0.1,
-					spread = {x = 50, y = 50, z = 50},
+					offset = 0,
+					scale = 0.007,
+					spread = {x = 100, y = 100, z = 100},
 					seed = 840405,
 					octaves = 3,
-					persist = 0.7
+					persist = 0.6
 				},
-				biomes = plant.wild.biomes,
-				y_max = 31000,
+				y_max = 30,
 				y_min = 1,
-				decoration = parentmod .. ":" .. wild_name
+				decoration = wild_node
 			})
 		else
-		-- if below is single line if-then-end statement
-			if plant.first_seed ~= "grass" then minetest.log("first seed undefined or not properly defined " .. plant.first_seed) end
-			table.insert(newgrassdrop.items, { items = { seed_node_name }, rarity = 8 })
+			table.insert(grassdrop.items, { items = seed_node, rarity = 10 })
 		end
+	else
+		minetest.log("Plant registration aborted")
+		minetesr.log("Fatal error")
 	end
 end
-
-xfarm.set_grass_drop = function(nudrop)
-	for i = 1, 5 do
-		minetest.override_item( "default:grass_" .. i, {
-			drop = nudrop
-		})
-	end
-end
-
-
-
-
-
-
-
-
-
+		
+		
+		
+		
+		
+ 

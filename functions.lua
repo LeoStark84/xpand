@@ -1,6 +1,6 @@
 xhelper = {}
 -- checks if a value is defined, if it is it returns it unchabged, if it is nit, returns the given default value
-xhelper.def_or_def(var, vartype, valid_range, defaultvalue)
+xhelper.def_or_def = function(var, vartype, valid_range, defaultvalue)
 	local retval = false
 	if type(var) == vartype then
 		if vartype == "table" then
