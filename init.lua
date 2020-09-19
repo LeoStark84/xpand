@@ -13,18 +13,23 @@
 -- additional functions in functions.lua (everything xhelper is here)
 xpand = {}
 local modpath = minetest.get_modpath("xpand")
-thismod = minetest.get_current_modname()
+local thismod = minetest.get_current_modname()
+modules = 0
 
+-- xhelper module
 dofile(modpath .. "/functions.lua")
+-- xnode module
 dofile(modpath .. "/models.lua")
 dofile(modpath .. "/materials.lua")
 dofile(modpath .. "/xnode.lua")
-dofile(modpath .. "/oresreg.lua")
+-- xfarm module
 dofile(modpath .. "/plants.lua")
---dofile(modpath .. "/veggies.lua")
 dofile(modpath .. "/xfarm.lua")
+-- xcolor module
 dofile(modpath .. "/xcolor.lua")
--- xpandver = 3 .. xnodever .. 
+-- mapgen stuff
+dofile(modpath .. "/oresreg.lua")
+minetest.log("xpand ver " .. modules .. "." .. (xfarmver + xnodever + xcolver + xhelperver) / modules)
 
 xpand.register_xnode_all = function(tm, materials, models)
 	for k, v in pairs(materials.nonredundant) do
@@ -39,19 +44,13 @@ xpand.register_xnode_all = function(tm, materials, models)
 end
 
 xpand.register_xnode_all(thismod, materials, models)
--- xhelper.purge(materials)
--- xhelper.purge(models)
-
--- materials.nonredundant.marble.crafter = xnode.register_material_base(thismod, materials.nonredundant.marble)
--- xnode.register_all_models(thismod, material_marble)
---xnode.register_non_redundant_models(thismod, material_cobblestone)
 
 -- MATERIAL / MODEL REGISTRATION END
 models = xhelper.purge()
 materials = xhelper.purge()
 
 xfarm.register_all_plants(thismod, plants)
-
+plants = xhelper.purge()
 
 
 
@@ -83,15 +82,7 @@ minetest.register_node("xpand:stone_with_silver", {
 	groups = { cracky = 3 },
 	drop = "xpand:silver_lump",
 })
-
---minetest.register_craftitem( "xpand:silver_lump", {
 	
-
-
-
-
-
-
 minetest.register_node("xpand:stone_with_aluminum", {
   description = "Stone with Aluminum", 
   tiles = { "default_stone.png^xpand_aluminum_ore.png" }, 
@@ -150,7 +141,6 @@ minetest.register_node("xpand:stone_with_emerald", {
 minetest.register_craftitem("xpand:emerald", {
   description = "Emerald",
   inventory_image = "xpand_emerald.png",
-  --wield_image = "xpand_emerald.png^[opacity:179",
   use_texture_alpha = true
 })
 

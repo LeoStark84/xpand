@@ -55,6 +55,7 @@ plants = {
 		},
 		primary_drop_name = "leaves",
 		primary_drop_count = 8,
+		seed_origin = "from_plant",
 		seed_name = "seeds",
 		seed_count = 3,
 		ivylike = false,
@@ -79,6 +80,7 @@ plants = {
 		first_seed = "grass",
 		primary_drop_name = "head",
 		primary_drop_count = 4,
+		seed_origin = "from_primary",
 		seed_name = "clove",
 		seed_count = 3,
 		drop_else = false

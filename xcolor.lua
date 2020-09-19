@@ -1,4 +1,7 @@
 xcolver= 1
+xcolstatus = "beta"
+modules = modules + 1
+minetest.log("xcolor ver " .. xcolver .. " " ..  xcolstatus)
 
 xcolor = {}
 

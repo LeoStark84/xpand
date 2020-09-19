@@ -1,4 +1,7 @@
-xnoderver = 4
+xnodever = 4
+xnodestatus = "beta"
+modules = modules + 1
+minetest.log("xnode ver " .. xnodever .. " " .. xnodestatus)
 xnode = {}
 
 -- takes a nodebox definition as argument and returns it's volume in voxels
